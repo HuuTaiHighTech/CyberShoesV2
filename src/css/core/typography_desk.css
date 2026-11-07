@@ -42,7 +42,7 @@
   --ls-h5: -0.01em; /* ≈ -0.32px @ 32px */
   --ls-h6: 0; /* 0px */
   /* letter spacing cách xa*/
-  --ls-p: 0.010em;
+  --ls-p: 0.01em;
   /* Khoảng cách item này đển item khác */
   /* 1. Biến cơ sở (tương đương $spacer) */
   --spacer: 1rem; /* Mặc định 16px */
@@ -59,49 +59,76 @@
   :root {
     font-size: 14px;
     /* font size heading - mobile (1rem = 14px) */
-    --mobile-h1: 2rem;   
-    --mobile-h2: 1.75rem;     
-    --mobile-h3: 1.75rem;  
-    --mobile-h4: 1.5rem;   
-    --mobile-h5: 1.25rem;  
-    --mobile-h6: 1.125rem; 
+    --mobile-h1: 2rem;
+    --mobile-h2: 1.75rem;
+    --mobile-h3: 1.75rem;
+    --mobile-h4: 1.5rem;
+    --mobile-h5: 1.25rem;
+    --mobile-h6: 1.125rem;
     --mobile-p: 1rem;
   }
 }
-html,
-body {
+* {
   font-family: "Jost", sans-serif;
   color: black;
 }
+/* category */
+.category_desk {
+  font-size: var(--desktop-h5);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--lh-none);
+}
 /* title */
 .title_desk {
-    font-size: var(--desktop-h1);
+  font-size: var(--desktop-h6);
   font-weight: var(--fw-semibold);
-  line-height: var(--lh-none);
+  line-height: var(--lh-tight);
   letter-spacing: var(--lh-none);
 }
-/* subtitle */
-.title_subtitle {
-    font-size: var(--desktop-h1);
-  font-weight: var(--fw-semibold);
-  line-height: var(--lh-none);
-  letter-spacing: var(--lh-none);
-}
+
 /* content */
 .content_desk {
-    font-size: var(--desktop-h1);
-  font-weight: var(--fw-semibold);
-  line-height: var(--lh-none);
+  font-size: var(--text-base);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-tight);
   letter-spacing: var(--lh-none);
 }
 /* kicker */
 .kicker_desk {
-  font-size: var(--text-sm);
-  line-height: 2.14;
-  font-weight: var(--fw-semibold);
-  letter-spacing: 0.0714em;
+  font-size: var(--text-base);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--lh-none);
 }
 @media (min-width: 300px) and (max-width: 992px) {
- 
-}
+  /* category */
+  .category_desk {
+    font-size: var(--desktop-h6);
+    font-weight: var(--fw-semibold);
+    line-height: var(--lh-tight);
+    letter-spacing: var(--lh-none);
+  }
+  /* title */
+  .title_desk {
+    font-size: var(--text-base);
+    font-weight: var(--fw-semibold);
+    line-height: var(--lh-tight);
+    letter-spacing: var(--lh-none);
+  }
 
+  /* content */
+  .content_desk {
+    font-size: var(--text-sm);
+    font-weight: var(--fw-medium);
+    line-height: var(--lh-tight);
+    letter-spacing: var(--lh-none);
+  }
+  /* kicker */
+  .kicker_desk {
+    font-size: var(--text-sm);
+    font-weight: var(--fw-medium);
+    line-height: var(--lh-tight);
+    letter-spacing: var(--lh-none);
+  }
+}

@@ -1,4 +1,4 @@
 /* Tổng hợp những file css */
-@import url(../public/css/core/reset.css);
-@import url(../public/css/core/typography-desktop.css);
-@import url(../public/css/core/color.css);
+@import url(./css/core/reset.css);
+@import url(./css/core/typography_desk.css);
+@import url(./css/core/colors.css);

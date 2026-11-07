@@ -41,7 +41,3 @@ p{
     padding: 0;
   margin: 0;
 }
-html, body {
-    overflow-x: hidden;
-    max-width: 100%;
-}

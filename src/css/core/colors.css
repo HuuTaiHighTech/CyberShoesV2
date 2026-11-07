@@ -1,0 +1,11 @@
+:root {
+  /* color primary  */
+  --color-primary: #ED1C24;
+
+  /* color neutral */
+  --neutral-100: #ffffff;
+  --neutral-600: #1C1A1A;
+  --neutral-800: #1C1A1A;
+
+  --color-hover: #991217;
+}
