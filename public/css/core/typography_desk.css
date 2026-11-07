@@ -1,0 +1,107 @@
+:root {
+  font-size: 16px;
+
+  /* font size heading */
+  --desktop-h1: 4rem; /* 64px */
+  --desktop-h2: 2rem; /* 56px */
+  --desktop-h3: 3rem; /* 48px */
+  --desktop-h4: 2.5rem; /* 40px */
+  --desktop-h5: 3.5rem; /* 32px */
+  --desktop-h6: 1.5rem; /* 24px */
+
+  /* font size content */
+  --text-xs: 0.75rem; /* 12px */
+  --text-sm: 0.875rem; /* 14px */
+  --text-base: 1rem; /* 16px */
+  --text-lg: 1.125rem; /* 18px */
+  --text-xl: 1.25rem; /* 20px */
+  --text-2xl: 1.5rem; /* 24px */
+  --text-3xl: 1.875rem; /* 30px */
+  /* Font Weight */
+  --fw-thin: 100;
+  --fw-extralight: 200;
+  --fw-light: 300;
+  --fw-normal: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-extrabold: 800;
+  --fw-black: 900;
+
+  /* line height */
+  --lh-none: 1; /* 100% */
+  --lh-tight: 1.25; /* 125% */
+  --lh-normal: 1.5; /* 150% */
+  --lh-relaxed: 1.75; /* 175% */
+  --lh-loose: 2; /* 200% */
+  /* letter spacing lại gần*/
+  --ls-h1: -0.03em; /* ≈ -1.92px @ 64px */
+  --ls-h2: -0.025em; /* ≈ -1.40px @ 56px */
+  --ls-h3: -0.02em; /* ≈ -0.96px @ 48px */
+  --ls-h4: -0.015em; /* ≈ -0.60px @ 40px */
+  --ls-h5: -0.01em; /* ≈ -0.32px @ 32px */
+  --ls-h6: 0; /* 0px */
+  /* letter spacing cách xa*/
+  --ls-p: 0.010em;
+  /* Khoảng cách item này đển item khác */
+  /* 1. Biến cơ sở (tương đương $spacer) */
+  --spacer: 1rem; /* Mặc định 16px */
+  /* 2. Định nghĩa các cấp độ khoảng cách (tương đương $spacers map) */
+  --space-0: 0;
+  --space-1: calc(var(--spacer) * 0.25); /* 4px  */
+  --space-2: calc(var(--spacer) * 0.5); /* 8px  */
+  --space-3: var(--spacer); /* 16px */
+  --space-4: calc(var(--spacer) * 1.5); /* 24px */
+  --space-5: calc(var(--spacer) * 3); /* 48px */
+  --space-6: calc(var(--spacer) * 4); /* 64px */
+}
+@media (max-width: 992px) {
+  :root {
+    font-size: 14px;
+    /* font size heading - mobile (1rem = 14px) */
+    --mobile-h1: 2rem;   
+    --mobile-h2: 1.75rem;     
+    --mobile-h3: 1.75rem;  
+    --mobile-h4: 1.5rem;   
+    --mobile-h5: 1.25rem;  
+    --mobile-h6: 1.125rem; 
+    --mobile-p: 1rem;
+  }
+}
+html,
+body {
+  font-family: "Jost", sans-serif;
+  color: black;
+}
+/* title */
+.title_desk {
+    font-size: var(--desktop-h1);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-none);
+  letter-spacing: var(--lh-none);
+}
+/* subtitle */
+.title_subtitle {
+    font-size: var(--desktop-h1);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-none);
+  letter-spacing: var(--lh-none);
+}
+/* content */
+.content_desk {
+    font-size: var(--desktop-h1);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-none);
+  letter-spacing: var(--lh-none);
+}
+/* kicker */
+.kicker_desk {
+  font-size: var(--text-sm);
+  line-height: 2.14;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.0714em;
+}
+@media (min-width: 300px) and (max-width: 992px) {
+ 
+}
+
