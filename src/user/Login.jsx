@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 const Login = () => {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -58,7 +59,7 @@ const Login = () => {
         </button>
 
         <p className="form-switch">
-          Chưa có tài khoản? <a href="/register">Đăng ký</a>
+          Chưa có tài khoản? <Link to="/register">Đăng ký</Link>
         </p>
       </form>
     </div>

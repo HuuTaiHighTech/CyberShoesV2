@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 const Register = () => {
   const [form, setForm] = useState({
@@ -88,7 +89,7 @@ const Register = () => {
         </button>
 
         <p className="form-switch">
-          Đã có tài khoản? <a href="/login">Đăng nhập</a>
+          Đã có tài khoản? <Link to="/login">Đăng nhập</Link>
         </p>
       </form>
     </div>
