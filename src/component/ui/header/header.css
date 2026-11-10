@@ -1,0 +1,40 @@
+.wrapper h4 {
+  margin: 0;
+  padding: 20px 0;
+}
+
+.header-brand,
+.header-brand a,
+.header-brand-logo {
+  flex-shrink: 0;
+}
+
+.header-brand-logo {
+  display: block;
+  width: 178px;
+  height: 69px;
+  max-width: none;
+}
+/* trước hover  */
+.category .product {
+    border-radius: 4px;
+}
+.category .product:hover {
+    background-color: white;
+}
+@media (max-width: 575.98px) {
+    .header_right {
+        display: flex;
+        justify-content: end;
+        align-items: center;
+    }
+    .header_right .wrapper {
+        padding: 2px !important;
+    }
+    .header_right .icon {
+        width: 18px;
+        height: 18px;
+        display: block;
+        margin: 0 auto;
+    }
+}
