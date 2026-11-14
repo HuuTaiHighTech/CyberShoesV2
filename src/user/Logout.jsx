@@ -1,19 +1,14 @@
-const Logout = () => {
-  const handleLogout = () => {
-    // Xóa thông tin đăng nhập đã lưu
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("userLogin");
+import { useNavigate } from "react-router-dom";
+import { clearUser } from "../util/variable_global";
 
-    // TODO: reset state (redux/context) nếu có
-    // Chuyển về trang đăng nhập
-    window.location.href = "/login";
+export default function Logout() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    clearUser();
+    alert("Đã đăng xuất!");
+    navigate("/login");
   };
 
-  return (
-    <button type="button" className="btn-logout" onClick={handleLogout}>
-      Đăng xuất
-    </button>
-  );
-};
-
-export default Logout;
+  return <button onClick={handleLogout}>Đăng xuất</button>;
+}

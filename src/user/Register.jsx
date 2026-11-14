@@ -1,99 +1,63 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { API_URL } from "../util/variable_global";
 
-const Register = () => {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
+export default function Regester() {
+  const navigate = useNavigate();
+  const [form, setForm] = useState({ email: "", password: "", name: "", phone: "" });
   const [error, setError] = useState("");
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
-  };
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name || !form.email || !form.password) {
-      setError("Vui lòng nhập đầy đủ thông tin");
-      return;
-    }
-    if (form.password !== form.confirmPassword) {
-      setError("Mật khẩu xác nhận không khớp");
-      return;
-    }
     setError("");
-    // TODO: gọi API đăng ký ở đây
-    // vd: await axios.post("/api/Users/signup", form);
-    console.log("Register:", form);
+    try {
+      // 1. Kiểm tra email đã tồn tại chưa
+      const check = await fetch(`${API_URL}/users?email=${encodeURIComponent(form.email)}`);
+      const existed = check.ok ? await check.json() : [];
+      if (existed.some((u) => u.email === form.email)) {
+        setError("Email đã được đăng ký");
+        return;
+      }
+
+      // 2. Tạo user mới
+      const res = await fetch(`${API_URL}/users`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      console.log("Register response:", data);
+
+      if (res.ok) {
+        alert("Đăng ký thành công!");
+        navigate("/login");
+      } else {
+        setError("Đăng ký thất bại");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Không kết nối được tới server");
+    }
   };
 
   return (
-    <div className="auth-page">
-      <form className="auth-form" onSubmit={handleSubmit}>
-        <h2>Đăng ký</h2>
-
-        <div className="form-group">
-          <label htmlFor="name">Họ và tên</label>
-          <input
-            id="name"
-            type="text"
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            placeholder="Nguyễn Văn A"
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="email">Email</label>
-          <input
-            id="email"
-            type="email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            placeholder="email@example.com"
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="password">Mật khẩu</label>
-          <input
-            id="password"
-            type="password"
-            name="password"
-            value={form.password}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="confirmPassword">Nhập lại mật khẩu</label>
-          <input
-            id="confirmPassword"
-            type="password"
-            name="confirmPassword"
-            value={form.confirmPassword}
-            onChange={handleChange}
-          />
-        </div>
-
-        {error && <p className="form-error">{error}</p>}
-
-        <button type="submit" className="btn-submit">
-          Đăng ký
-        </button>
-
-        <p className="form-switch">
-          Đã có tài khoản? <Link to="/login">Đăng nhập</Link>
-        </p>
-      </form>
-    </div>
+    <form onSubmit={handleSubmit} style={{ maxWidth: 400, margin: "40px auto" }}>
+      <h2>Đăng ký</h2>
+      <input name="email" type="email" placeholder="Email" onChange={handleChange} required />
+      <br />
+      <input name="password" type="password" placeholder="Mật khẩu" onChange={handleChange} required />
+      <br />
+      <input name="name" placeholder="Họ tên" onChange={handleChange} required />
+      <br />
+      <input name="phone" placeholder="Số điện thoại" onChange={handleChange} required />
+      <br />
+      {error && <p style={{ color: "red" }}>{error}</p>}
+      <button type="submit">Đăng ký</button>
+      <p>
+        Đã có tài khoản? <Link to="/login">Đăng nhập</Link>
+      </p>
+    </form>
   );
-};
-
-export default Register;
+}
