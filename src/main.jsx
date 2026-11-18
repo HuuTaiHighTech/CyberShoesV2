@@ -17,31 +17,37 @@ import DetailProduct from "./pages/client/DetailProduct";
 import SignInAndSignOut from "./pages/client/SignInAndSignUp";
 import Demo from "./pages/Demo";
 import SignInAndSignUp from "./pages/client/SignInAndSignUp";
-
+import ProductList from "./pages/client/ProductList";
+// nhiệm vụa của nó kết nối ưng dụng
+import { Provider } from "react-redux";
+import { store } from "./redux/store";
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>
-    <Routes>
-      <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-      <Route path="/admin" element={<AdminTemplate />}>
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="products" element={<AdminProductList />} />
-        <Route path="product/:id?" element={<CreateAndEdit />} />
-        <Route path="orders" element={<ManageOrder />} />
-      </Route>
+    <Provider store={store}>
+      <Routes>
+        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/admin" element={<AdminTemplate />}>
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="products" element={<AdminProductList />} />
+          <Route path="product/:id?" element={<CreateAndEdit />} />
+          <Route path="orders" element={<ManageOrder />} />
+        </Route>
 
-      <Route path="/demo" element={<Demo />} />
-      <Route path="/" element={<ClientTemplate />}>
-        <Route index element={<HomePage />} />
-        <Route path="homepage" element={<HomePage />} />
-        <Route path="products" element={<ClientProductList />} />
-        <Route path="products/:category" element={<ClientProductList />} />
-        <Route path="introduce" element={<Introduce />} />
-        <Route path="contact" element={<Contact />} />
-        <Route path="wishlist" element={<WishList />} />
-        <Route path="cart" element={<Cart />} />
-        <Route path="product/:id" element={<DetailProduct />} />
-        <Route path="sign-in" element={<SignInAndSignUp />} />
-      </Route>
-    </Routes>
+        <Route path="/demo" element={<Demo />} />
+        <Route path="/" element={<ClientTemplate />}>
+          <Route index element={<HomePage />} />
+          <Route path="homepage" element={<HomePage />} />
+          <Route path="products" element={<ClientProductList />} />
+          <Route path="products/:category" element={<ClientProductList />} />
+          <Route path="introduce" element={<Introduce />} />
+          <Route path="contact" element={<Contact />} />
+          <Route path="wishlist" element={<WishList />} />
+          <Route path="Cart" element={<Cart />} />
+          <Route path="get-all-product" element={<ProductList />} />
+          <Route path="get-all-product/detail/:id" element={<DetailProduct />} />
+          <Route path="sign-in" element={<SignInAndSignUp />} />
+        </Route>
+      </Routes>
+    </Provider>
   </BrowserRouter>
 )

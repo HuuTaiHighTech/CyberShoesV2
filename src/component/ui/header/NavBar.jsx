@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { NavLink } from 'react-router-dom'
 import ArrowBelow from '../icons/ArrowBelow';
 
 const NavBar1 = (props) => {
@@ -16,9 +16,9 @@ const NavBar1 = (props) => {
                     setHoveredCategoryId(null);
                 }}
             >
-                <Link to={item.link} className='text-decoration-none text-black'>
+                <NavLink to={item.link} className='text-decoration-none text-black'>
                     {item.name}
-                </Link>
+                </NavLink>
                 {item.dropdown && <ArrowBelow />}
                 {item.dropdown && isOpen && (
                     <ul
@@ -31,15 +31,15 @@ const NavBar1 = (props) => {
                                 className='ms-3 position-relative'
                                 onMouseEnter={() => setHoveredCategoryId(category.id)}
                             >
-                                <Link to={`/products/${category.name.toLowerCase()}`} className='fw-bold text-decoration-none text-black'>
+                                <NavLink to={`/products/${category.name.toLowerCase()}`} className='fw-bold text-decoration-none text-black'>
                                     {category.name}
                                     <i className="fa-solid fa-angle-down ms-2" aria-hidden="true"></i>
-                                </Link>
+                                </NavLink>
                                 {hoveredCategoryId === category.id && (
                                     <ul className='category list-unstyled' style={{borderRadius: '5px', padding: '10px', width: 'max-content'}}>
                                         {category.shoes.map((shoe) => (
                                             <li key={shoe.id} className='mb-2'>
-                                                <Link to={`/product/${shoe.id}`} className='product text-black text-decoration-none'>{shoe.name}</Link>
+                                                <NavLink to={`/product/${shoe.id}`} className='product text-black text-decoration-none'>{shoe.name}</NavLink>
                                             </li>
                                         ))}
                                     </ul>
