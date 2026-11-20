@@ -7,8 +7,10 @@ import { clearCredentials, setCredentials } from '../../redux/authSlice'
 import {
   fetchOrderHistory,
   fetchProfile,
+  uploadAvatar,
   updateProfile,
 } from '../../redux/apiSlice'
+import { URL_IMAGE } from '../../util/variable_global'
 import './Profile.css'
 
 const orderStatusLabels = {
@@ -30,8 +32,20 @@ const formatOrderDate = (value) => {
 const formatPrice = (value) =>
   new Intl.NumberFormat('vi-VN').format(value)
 
+const getAvatarUrl = (value) => {
+  if (typeof value !== 'string' || !value.trim()) {
+    return ''
+  }
+
+  const image = value.trim()
+  if (/^(https?:)?\/\//i.test(image) || /^data:/i.test(image)) {
+    return image
+  }
+
+  return `${URL_IMAGE}${image.replace(/^\/+/, '').replace(/^images\//i, '')}`
+}
+
 const profileSchema = Yup.object({
-  id: Yup.number().integer().required('Không tìm thấy mã hồ sơ'),
   email: Yup.string()
     .trim()
     .email('Email không hợp lệ')
@@ -42,6 +56,9 @@ const profileSchema = Yup.object({
   phone: Yup.string()
     .trim()
     .max(20, 'Số điện thoại không được vượt quá 20 ký tự'),
+  password: Yup.string()
+    .transform((value) => (value === '' ? undefined : value))
+    .min(6, 'Mật khẩu cần có ít nhất 6 ký tự'),
   gender: Yup.boolean().required('Vui lòng chọn giới tính'),
 })
 
@@ -51,11 +68,9 @@ const Profile = () => {
   const { accessToken, user } = useSelector((state) => state.auth)
   const profile = useSelector((state) => state.api.profile)
   const profileStatus = useSelector((state) => state.api.profileStatus)
+  const profileError = useSelector((state) => state.api.profileError)
   const profileUpdateStatus = useSelector(
     (state) => state.api.profileUpdateStatus,
-  )
-  const profileUpdateError = useSelector(
-    (state) => state.api.profileUpdateError,
   )
   const orders = useSelector((state) => state.api.orderHistory)
   const orderHistoryStatus = useSelector(
@@ -68,8 +83,12 @@ const Profile = () => {
   const previewUrlRef = useRef(null)
   const [selectedAvatarUrl, setSelectedAvatarUrl] = useState('')
   const [avatarError, setAvatarError] = useState('')
-  const savedAvatarUrl = [user?.avatar, user?.image, user?.avatarUrl].find(
-    (value) => typeof value === 'string' && value.trim(),
+  const [avatarSuccess, setAvatarSuccess] = useState('')
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const savedAvatarUrl = getAvatarUrl(
+    [profile?.avatar, profile?.image, user?.avatar, user?.image, user?.avatarUrl].find(
+      (value) => typeof value === 'string' && value.trim(),
+    ),
   )
 
   useEffect(
@@ -95,13 +114,13 @@ const Profile = () => {
       }
     }
 
-    dispatch(fetchProfile(accessToken)).then((result) =>
+    dispatch(fetchProfile(user?.email)).then((result) =>
       redirectIfUnauthorized(result, fetchProfile),
     )
     dispatch(fetchOrderHistory(accessToken)).then((result) =>
       redirectIfUnauthorized(result, fetchOrderHistory),
     )
-  }, [accessToken, dispatch, navigate])
+  }, [accessToken, dispatch, navigate, user?.email])
 
   const formik = useFormik({
     enableReinitialize: true,
@@ -110,16 +129,33 @@ const Profile = () => {
       email: profile?.email ?? user?.email ?? '',
       name: profile?.name ?? user?.name ?? '',
       phone: profile?.phone ?? user?.phone ?? '',
+      password: '',
       gender:
         (profile?.gender ?? user?.gender) === true ||
         (profile?.gender ?? user?.gender) === 'true',
     },
     validationSchema: profileSchema,
-    onSubmit: async (values, { setStatus }) => {
+    onSubmit: async (values, { setStatus, setFieldValue }) => {
       setStatus(undefined)
+      const profileId = profile?.id ?? user?.id
+      const id = Number(profileId)
+      if (
+        profileId == null ||
+        profileId === '' ||
+        !Number.isInteger(id)
+      ) {
+        setStatus({
+          type: 'error',
+          message: 'Không tìm thấy mã hồ sơ. Vui lòng tải lại trang.',
+        })
+        return
+      }
+
+      const { password, ...profileValues } = values
       const profileData = {
-        ...values,
-        id: Number(values.id),
+        ...profileValues,
+        ...(password ? { password } : {}),
+        id,
         email: values.email.trim(),
         name: values.name.trim(),
         phone: values.phone.trim(),
@@ -137,6 +173,7 @@ const Profile = () => {
         }
         window.localStorage.setItem('userLogin', JSON.stringify(updatedUser))
         dispatch(setCredentials(updatedUser))
+        setFieldValue('password', '')
         setStatus({
           type: 'success',
           message: 'Cập nhật thông tin thành công.',
@@ -171,7 +208,8 @@ const Profile = () => {
       </div>
     ) : null
 
-  const handleAvatarChange = (event) => {
+  const handleAvatarChange = async (event) => {
+    const input = event.currentTarget
     const file = event.target.files?.[0]
     if (!file) {
       return
@@ -179,7 +217,7 @@ const Profile = () => {
 
     if (!file.type.startsWith('image/')) {
       setAvatarError('Vui lòng chọn tệp hình ảnh.')
-      event.target.value = ''
+      input.value = ''
       return
     }
 
@@ -190,6 +228,53 @@ const Profile = () => {
     previewUrlRef.current = previewUrl
     setSelectedAvatarUrl(previewUrl)
     setAvatarError('')
+    setAvatarSuccess('')
+    setAvatarUploading(true)
+
+    let uploaded = false
+    try {
+      await dispatch(uploadAvatar({ file, accessToken })).unwrap()
+      uploaded = true
+      const updatedProfile = await dispatch(fetchProfile(user?.email)).unwrap()
+      const updatedAvatarUrl = getAvatarUrl(
+        updatedProfile.avatar ?? updatedProfile.image,
+      )
+      const updatedUser = {
+        ...user,
+        ...updatedProfile,
+        ...(updatedAvatarUrl ? { avatar: updatedAvatarUrl } : {}),
+        accessToken,
+      }
+      window.localStorage.setItem('userLogin', JSON.stringify(updatedUser))
+      dispatch(setCredentials(updatedUser))
+
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current)
+        previewUrlRef.current = null
+      }
+      setSelectedAvatarUrl('')
+      setAvatarSuccess('Cập nhật ảnh đại diện thành công.')
+    } catch (error) {
+      if (error?.status === 401) {
+        window.localStorage.removeItem('userLogin')
+        dispatch(clearCredentials())
+        navigate('/sign-in', { replace: true })
+      }
+
+      if (!uploaded && previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current)
+        previewUrlRef.current = null
+        setSelectedAvatarUrl('')
+      }
+      setAvatarError(
+        uploaded
+          ? `Ảnh đã tải lên nhưng không thể tải lại hồ sơ: ${error?.message || String(error)}`
+          : error?.message || String(error),
+      )
+    } finally {
+      setAvatarUploading(false)
+      input.value = ''
+    }
   }
 
   return (
@@ -203,12 +288,14 @@ const Profile = () => {
           type="file"
           accept="image/*"
           onChange={handleAvatarChange}
+          disabled={avatarUploading}
         />
         <button
           type="button"
           className="profile-avatar-picker"
           onClick={() => avatarInputRef.current?.click()}
           aria-label="Chọn ảnh đại diện"
+          disabled={avatarUploading}
         >
           {selectedAvatarUrl || savedAvatarUrl ? (
             <img
@@ -227,14 +314,30 @@ const Profile = () => {
         {avatarError && (
           <p className="profile-avatar-error" role="alert">{avatarError}</p>
         )}
+        {avatarUploading && <p role="status">Đang tải ảnh đại diện...</p>}
+        {avatarSuccess && <p className="text-success mb-0" role="status">{avatarSuccess}</p>}
       </div>
 
       <div>
         {profileStatus === 'loading' && (
           <div role="status">Đang tải hồ sơ...</div>
         )}
+        {profileStatus === 'failed' && (
+          <p className="text-danger mb-0" role="alert">
+            Không thể tải hồ sơ: {profileError}
+          </p>
+        )}
         <form className="row g-3" onSubmit={formik.handleSubmit} noValidate>
-          <input type="hidden" {...formik.getFieldProps('id')} />
+          <div className="col-md-6">
+            <label htmlFor="profileId" className="form-label">Mã hồ sơ</label>
+            <input
+              {...formik.getFieldProps('id')}
+              id="profileId"
+              type="text"
+              className="form-control"
+              disabled
+            />
+          </div>
 
           <div className="col-md-6">
             <label htmlFor="email" className="form-label">Email</label>
@@ -275,6 +378,20 @@ const Profile = () => {
             {renderError('phone')}
           </div>
 
+          <div className="col-md-6">
+            <label htmlFor="password" className="form-label">Mật khẩu mới</label>
+            <input
+              {...formik.getFieldProps('password')}
+              id="password"
+              type="password"
+              autoComplete="new-password"
+              className={`form-control${hasFieldError('password') ? ' is-invalid' : ''}`}
+              aria-invalid={hasFieldError('password')}
+              aria-describedby={hasFieldError('password') ? 'password-error' : undefined}
+            />
+            {renderError('password')}
+          </div>
+
           <fieldset className="col-md-6">
             <legend className="form-label fs-6">Giới tính</legend>
             {[{ label: 'Nam', value: true }, { label: 'Nữ', value: false }].map(
@@ -297,15 +414,23 @@ const Profile = () => {
             {renderError('gender')}
           </fieldset>
 
-          {profileUpdateError && (
-            <div className="col-12">
-              <p className="text-danger mb-0" role="alert">
-                Không thể cập nhật hồ sơ: {profileUpdateError}
-              </p>
-            </div>
-          )}
-          {formik.status?.message && (
-            <div className="col-12">
+          <div className="col-12">
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={
+                formik.isSubmitting ||
+                profileStatus === 'loading' ||
+                profileUpdateStatus === 'loading'
+              }
+            >
+              {profileStatus === 'loading'
+                ? 'Đang tải hồ sơ...'
+                : formik.isSubmitting || profileUpdateStatus === 'loading'
+                ? 'Đang cập nhật...'
+                : 'Cập nhật hồ sơ'}
+            </button>
+            {formik.status?.message && (
               <p
                 className={
                   formik.status.type === 'success'
@@ -316,18 +441,7 @@ const Profile = () => {
               >
                 {formik.status.message}
               </p>
-            </div>
-          )}
-          <div className="col-12">
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={formik.isSubmitting || profileUpdateStatus === 'loading'}
-            >
-              {formik.isSubmitting || profileUpdateStatus === 'loading'
-                ? 'Đang cập nhật...'
-                : 'Cập nhật hồ sơ'}
-            </button>
+            )}
           </div>
         </form>
       </div>

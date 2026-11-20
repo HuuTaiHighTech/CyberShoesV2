@@ -301,24 +301,36 @@ export const fetchFavoriteProducts = createAsyncThunk(
 
 export const fetchProfile = createAsyncThunk(
   "api/fetchProfile",
-  async (accessToken, { rejectWithValue }) => {
-    if (!accessToken) {
-      return rejectWithValue("Vui lòng đăng nhập để xem hồ sơ.");
+  async (email, { rejectWithValue }) => {
+    if (!email) {
+      return rejectWithValue("Không tìm thấy email để tải hồ sơ.");
     }
 
     try {
-      const response = await axios.post(
-        `${URL_API}/api/Users/getProfile`,
-        null,
-        { headers: { Authorization: accessToken } },
+      const response = await axios.get(
+        `${URL_API}/api/Users/detail`,
+        { params: { email } },
       );
       const profile = response.data?.content;
 
-      if (!profile || typeof profile !== "object" || Array.isArray(profile)) {
+      if (
+        !profile ||
+        typeof profile !== "object" ||
+        Array.isArray(profile) ||
+        profile.id == null
+      ) {
         throw new Error("Dữ liệu hồ sơ trả về không đúng định dạng.");
       }
 
-      return profile;
+      return {
+        id: profile.id,
+        email: profile.email ?? email,
+        name: profile.name ?? "",
+        gender: profile.gender,
+        phone: profile.phone ?? "",
+        avatar: profile.avatar,
+        image: profile.image,
+      };
     } catch (error) {
       return rejectWithValue({
         status: error.response?.status,
@@ -365,6 +377,34 @@ export const fetchOrderHistory = createAsyncThunk(
   },
 );
 
+export const uploadAvatar = createAsyncThunk(
+  "api/uploadAvatar",
+  async ({ file, accessToken }, { rejectWithValue }) => {
+    if (!accessToken) {
+      return rejectWithValue({
+        message: "Vui lòng đăng nhập để cập nhật ảnh đại diện.",
+      });
+    }
+
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    try {
+      const response = await axios.post(
+        `${URL_API}/api/Users/uploadavatar`,
+        formData,
+        { headers: { Authorization: accessToken } },
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue({
+        status: error.response?.status,
+        message: getErrorMessage(error),
+      });
+    }
+  },
+);
+
 export const updateProfile = createAsyncThunk(
   "api/updateProfile",
   async ({ profile, accessToken }, { rejectWithValue }) => {
@@ -380,7 +420,7 @@ export const updateProfile = createAsyncThunk(
       );
       const responseProfile = response.data?.content;
 
-      return {
+      const updatedProfile = {
         ...profile,
         ...(responseProfile &&
         typeof responseProfile === "object" &&
@@ -388,6 +428,8 @@ export const updateProfile = createAsyncThunk(
           ? responseProfile
           : {}),
       };
+      delete updatedProfile.password;
+      return updatedProfile;
     } catch (error) {
       return rejectWithValue({
         status: error.response?.status,
