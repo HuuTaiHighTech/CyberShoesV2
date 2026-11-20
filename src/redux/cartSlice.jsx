@@ -7,11 +7,12 @@ const cartSlice = createSlice({
     addToCart(state, action) {
       const product = action.payload;
       const existingProduct = state.find((item) => item.id === product.id);
+      const amount = product.quantity || 1;
 
       if (existingProduct) {
-        existingProduct.quantity += 1;
+        existingProduct.quantity += amount;
       } else {
-        state.push({ ...product, quantity: 1 });
+        state.push({ ...product, quantity: amount });
       }
     },
     removeFromCart(state, action) {
@@ -22,7 +23,7 @@ const cartSlice = createSlice({
       const product = state.find((item) => item.id === id);
 
       if (product) {
-        product.quantity += amount;
+        product.quantity = Math.max(1, product.quantity + amount);
       }
     },
   },

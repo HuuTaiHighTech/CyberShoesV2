@@ -1,8 +1,8 @@
-import axios from 'axios'
 import { useState } from 'react'
 import { useFormik } from 'formik'
 import { Link, useMatch, useNavigate } from 'react-router-dom'
-import { TOKEN_CYBERSOFT, URL_API } from '../../util/variable_global'
+import { useDispatch } from 'react-redux'
+import { saveProduct } from '../../redux/apiSlice'
 
 const sampleProduct = {
   id: 3,
@@ -37,6 +37,7 @@ const emptyProduct = {
 }
 
 const CreateAndEdit = () => {
+  const dispatch = useDispatch()
   const match = useMatch('/admin/product/:id')
   const navigate = useNavigate()
   const isEdit = Boolean(match)
@@ -61,16 +62,9 @@ const CreateAndEdit = () => {
         price: Number(values.price),
         quantity: Number(values.quantity),
       }
-      const config = TOKEN_CYBERSOFT
-        ? { headers: { TokenCybersoft: TOKEN_CYBERSOFT } }
-        : undefined
-
       try {
-        const response = await axios.post(`${URL_API}/api/Product`, product, config)
-        const responseProduct = response.data?.content
-        const addedProduct = responseProduct && typeof responseProduct === 'object'
-          ? responseProduct
-          : product
+        const response = await dispatch(saveProduct(product)).unwrap()
+        const addedProduct = response.product
 
         setAddedProducts((currentProducts) =>
           isEdit ? [addedProduct] : [...currentProducts, addedProduct],
@@ -80,15 +74,9 @@ const CreateAndEdit = () => {
           message: `${isEdit ? 'Cập nhật' : 'Thêm'} sản phẩm thành công (HTTP ${response.status}).`,
         })
       } catch (error) {
-        const responseData = error.response?.data
-        const message = typeof responseData?.message === 'string'
-          ? responseData.message
-          : typeof responseData === 'string'
-            ? responseData
-            : error.message
         setStatus({
           type: 'danger',
-          message: `Gửi sản phẩm thất bại: ${message}`,
+          message: `Gửi sản phẩm thất bại: ${error}`,
         })
       }
     },

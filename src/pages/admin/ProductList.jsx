@@ -1,61 +1,23 @@
-import axios from 'axios'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { TOKEN_CYBERSOFT, URL_API } from '../../util/variable_global'
+import { useDispatch, useSelector } from 'react-redux'
+import {
+  deleteProduct,
+  fetchProducts as fetchProductsAction,
+} from '../../redux/apiSlice'
 
 const ProductList = () => {
-  const [products, setProducts] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [errorMessage, setErrorMessage] = useState('')
+  const dispatch = useDispatch()
+  const products = useSelector((state) => state.api.products)
+  const productsStatus = useSelector((state) => state.api.productsStatus)
+  const errorMessage = useSelector((state) => state.api.productsError)
   const [refreshKey, setRefreshKey] = useState(0)
   const [deletingId, setDeletingId] = useState(null)
   const [actionMessage, setActionMessage] = useState(null)
 
   useEffect(() => {
-    let isMounted = true
-    setLoading(true)
-    setErrorMessage('')
-    const config = TOKEN_CYBERSOFT
-      ? { headers: { TokenCybersoft: TOKEN_CYBERSOFT } }
-      : undefined
-
-    const fetchProducts = async () => {
-      try {
-        const response = await axios.get(`${URL_API}/api/Product`, config)
-        const apiProducts = Array.isArray(response.data)
-          ? response.data
-          : response.data?.content
-
-        if (!Array.isArray(apiProducts)) {
-          throw new Error('Dữ liệu trả về từ API không đúng định dạng danh sách.')
-        }
-
-        if (isMounted) {
-          setProducts(apiProducts)
-        }
-      } catch (error) {
-        if (isMounted) {
-          const responseData = error.response?.data
-          const message = typeof responseData?.message === 'string'
-            ? responseData.message
-            : typeof responseData === 'string'
-              ? responseData
-              : error.message
-          setErrorMessage(`Không thể tải sản phẩm: ${message}`)
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false)
-        }
-      }
-    }
-
-    fetchProducts()
-
-    return () => {
-      isMounted = false
-    }
-  }, [refreshKey])
+    dispatch(fetchProductsAction())
+  }, [dispatch, refreshKey])
 
   const handleDeleteProduct = async (product) => {
     if (!window.confirm(`Bạn có chắc muốn xóa sản phẩm "${product.name}" không?`)) {
@@ -64,30 +26,18 @@ const ProductList = () => {
 
     setDeletingId(product.id)
     setActionMessage(null)
-    const config = {
-      params: { ProductId: product.id },
-      ...(TOKEN_CYBERSOFT && {
-        headers: { TokenCybersoft: TOKEN_CYBERSOFT },
-      }),
-    }
 
     try {
-      await axios.delete(`${URL_API}/api/Product`, config)
+      await dispatch(deleteProduct(product.id)).unwrap()
       setActionMessage({
         type: 'success',
         text: `Đã xóa sản phẩm "${product.name}". Đang tải lại danh sách...`,
       })
       setRefreshKey((key) => key + 1)
     } catch (error) {
-      const responseData = error.response?.data
-      const message = typeof responseData?.message === 'string'
-        ? responseData.message
-        : typeof responseData === 'string'
-          ? responseData
-          : error.message
       setActionMessage({
         type: 'danger',
-        text: `Không thể xóa sản phẩm "${product.name}": ${message}`,
+        text: `Không thể xóa sản phẩm "${product.name}": ${error}`,
       })
     } finally {
       setDeletingId(null)
@@ -95,7 +45,7 @@ const ProductList = () => {
   }
 
   const renderArrProduct = () => {
-    if (loading) {
+    if (productsStatus === 'loading') {
       return (
         <tr>
           <td colSpan="6" className="py-4 text-center text-muted">
@@ -109,7 +59,7 @@ const ProductList = () => {
       return (
         <tr>
           <td colSpan="6" className="py-4 text-center text-danger">
-            {errorMessage}
+            Không thể tải sản phẩm: {errorMessage}
           </td>
         </tr>
       )

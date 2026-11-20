@@ -1,31 +1,38 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import {
   changeCartQuantity,
   removeFromCart,
 } from "../../redux/cartSlice";
-import { URL_API } from "../../util/variable_global";
-
-const userDemo = {
-  email: "taipro573@gmail.com",
-  accessToken: "eyJhbGciOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxLzA0L3htbGRzaWctbW9yZSNobWFjLXNoYTI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJ0YWlwcm81NzNAZ21haWwuY29tIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiVklFV19QUk9GSUxFIiwibmJmIjoxNzk0OTc2MDA3LCJleHAiOjE3OTQ5Nzk2MDd9.g7PvBDCdQ69KsruKcjJz3p5UtqEWsebAYwFerWFipAw"
-};
+import { placeOrder } from "../../redux/apiSlice";
 
 const Cart = () => {
   const cart = useSelector((state) => state.cart);
+  const { accessToken, user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderMessage, setOrderMessage] = useState("");
 
   const handleOrder = async () => {
+    if (!accessToken) {
+      navigate("/sign-in");
+      return;
+    }
+
+    if (!user?.email) {
+      setOrderMessage("Không tìm thấy email tài khoản để đặt hàng.");
+      return;
+    }
+
     if (cart.length === 0) {
       setOrderMessage("Giỏ hàng đang trống.");
       return;
     }
 
     const orderData = {
-      email: userDemo.email,
+      email: user.email,
       orderDetail: cart.map((item) => ({
         productId: String(item.id),
         quantity: item.quantity,
@@ -36,22 +43,13 @@ const Cart = () => {
     setOrderMessage("");
 
     try {
-      const response = await axios.post(
-        `${URL_API}/api/Users/order`,
-        orderData,
-        {
-          headers: {
-            Authorization: userDemo.accessToken,
-          },
-        }
-      );
-      setOrderMessage(response.data?.message || "Đặt hàng thành công.");
+      const message = await dispatch(
+        placeOrder({ orderData, accessToken }),
+      ).unwrap();
+      setOrderMessage(message);
     } catch (error) {
       console.error("Gọi API đặt hàng thất bại:", error);
-      const responseMessage = error.response?.data?.message;
-      setOrderMessage(
-        `Đặt hàng thất bại: ${responseMessage || error.message}`
-      );
+      setOrderMessage(`Đặt hàng thất bại: ${error}`);
     } finally {
       setIsSubmitting(false);
     }

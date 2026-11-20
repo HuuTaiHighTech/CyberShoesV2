@@ -1,10 +1,11 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import './header.css'
 import BrandIcon from '../icons/BrandIcon'
 import NavBar1 from './NavBar'
 import IconHeaderRight from '../icons/IconHeaderRight'
 import MenuIcon from '../icons/MenuIcon'
 import MobileMenuModal from './MobileMenuModal'
+import SearchBar from './searchbar/SearchBar'
 const data = {
     navbarItems: [
         {
@@ -93,6 +94,11 @@ const Header = () => {
                     </div>
                     <div className='header_right col-lg-3 col-4 d-flex justify-content-end'>
                         <IconHeaderRight />
+                    </div>
+                </div>
+                <div className="row justify-content-end px-3 pb-3">
+                    <div className="col-12 col-sm-8 col-md-6 col-lg-4">
+                        <SearchBar />
                     </div>
                 </div>
                 <div id="mobileMenuCollapse" className="collapse">
