@@ -2,7 +2,9 @@ import { useFormik } from 'formik'
 import { useDispatch } from 'react-redux'
 import * as Yup from 'yup'
 import { useMatch, useNavigate } from 'react-router-dom'
+import SmartPasswordInput from '../../component/ui/SmartPasswordInput'
 import { signIn, signUp } from '../../redux/apiSlice'
+import { PASSWORD_RULES } from '../../util/passwordRules'
 
 const signInSchema = Yup.object({
   email: Yup.string()
@@ -20,7 +22,11 @@ const signUpSchema = Yup.object({
     .email('Email không hợp lệ')
     .required('Vui lòng nhập email'),
   password: Yup.string()
-    .min(6, 'Mật khẩu cần có ít nhất 6 ký tự')
+    .test(
+      'password-rules',
+      'Mật khẩu chưa đủ điều kiện',
+      (value) => !value || PASSWORD_RULES.every((rule) => rule.re.test(value)),
+    )
     .required('Vui lòng nhập mật khẩu'),
   confirmPassword: Yup.string()
     .oneOf([Yup.ref('password')], 'Mật khẩu xác nhận không khớp')
@@ -86,15 +92,27 @@ const SignInAndSignUp = () => {
     return (
       <div className="auth-field" key={name}>
         <label htmlFor={name}>{label}</label>
-        <input
-          {...formik.getFieldProps(name)}
-          id={name}
-          type={options.type || 'text'}
-          placeholder={options.placeholder}
-          autoComplete={options.autoComplete}
-          aria-invalid={Boolean(error)}
-          aria-describedby={error ? `${name}-error` : undefined}
-        />
+        {options.type === 'password' ? (
+          <SmartPasswordInput
+            {...formik.getFieldProps(name)}
+            id={name}
+            showStrength={options.showStrength}
+            placeholder={options.placeholder}
+            autoComplete={options.autoComplete}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? `${name}-error` : undefined}
+          />
+        ) : (
+          <input
+            {...formik.getFieldProps(name)}
+            id={name}
+            type={options.type || 'text'}
+            placeholder={options.placeholder}
+            autoComplete={options.autoComplete}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? `${name}-error` : undefined}
+          />
+        )}
         {error && (
           <span className="auth-field-error" id={`${name}-error`}>
             {error}
@@ -307,6 +325,7 @@ const SignInAndSignUp = () => {
               type: 'password',
               placeholder: 'Tối thiểu 6 ký tự',
               autoComplete: isRegister ? 'new-password' : 'current-password',
+              showStrength: isRegister,
             })}
             {isRegister && renderField('confirmPassword', 'Xác nhận mật khẩu', {
               type: 'password',

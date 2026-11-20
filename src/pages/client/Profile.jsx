@@ -4,11 +4,13 @@ import * as Yup from 'yup'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { clearCredentials, setCredentials } from '../../redux/authSlice'
+import SmartPasswordInput from '../../component/ui/SmartPasswordInput'
 import {
   fetchOrderHistory,
   fetchProfile,
   updateProfile,
 } from '../../redux/apiSlice'
+import { PASSWORD_RULES } from '../../util/passwordRules'
 import './Profile.css'
 
 const orderStatusLabels = {
@@ -43,7 +45,11 @@ const profileSchema = Yup.object({
     .max(20, 'Số điện thoại không được vượt quá 20 ký tự'),
   password: Yup.string()
     .transform((value) => (value === '' ? undefined : value))
-    .min(6, 'Mật khẩu cần có ít nhất 6 ký tự'),
+    .test(
+      'password-rules',
+      'Mật khẩu chưa đủ điều kiện',
+      (value) => !value || PASSWORD_RULES.every((rule) => rule.re.test(value)),
+    ),
   gender: Yup.boolean().required('Vui lòng chọn giới tính'),
 })
 
@@ -237,14 +243,14 @@ const Profile = () => {
 
           <div className="col-md-6">
             <label htmlFor="password" className="form-label">Mật khẩu mới</label>
-            <input
+            <SmartPasswordInput
               {...formik.getFieldProps('password')}
               id="password"
-              type="password"
               autoComplete="new-password"
               className={`form-control${hasFieldError('password') ? ' is-invalid' : ''}`}
               aria-invalid={hasFieldError('password')}
               aria-describedby={hasFieldError('password') ? 'password-error' : undefined}
+              showStrength
             />
             {renderError('password')}
           </div>
