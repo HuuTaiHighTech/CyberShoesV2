@@ -299,6 +299,104 @@ export const fetchFavoriteProducts = createAsyncThunk(
   },
 );
 
+export const fetchProfile = createAsyncThunk(
+  "api/fetchProfile",
+  async (accessToken, { rejectWithValue }) => {
+    if (!accessToken) {
+      return rejectWithValue("Vui lòng đăng nhập để xem hồ sơ.");
+    }
+
+    try {
+      const response = await axios.post(
+        `${URL_API}/api/Users/getProfile`,
+        null,
+        { headers: { Authorization: accessToken } },
+      );
+      const profile = response.data?.content;
+
+      if (!profile || typeof profile !== "object" || Array.isArray(profile)) {
+        throw new Error("Dữ liệu hồ sơ trả về không đúng định dạng.");
+      }
+
+      return profile;
+    } catch (error) {
+      return rejectWithValue({
+        status: error.response?.status,
+        message: getErrorMessage(error),
+      });
+    }
+  },
+);
+
+export const fetchOrderHistory = createAsyncThunk(
+  "api/fetchOrderHistory",
+  async (accessToken, { rejectWithValue }) => {
+    if (!accessToken) {
+      return rejectWithValue({
+        message: "Vui lòng đăng nhập để xem lịch sử đơn hàng.",
+      });
+    }
+
+    try {
+      const response = await axios.post(
+        `${URL_API}/api/Users/getProfileV2`,
+        null,
+        { headers: { Authorization: accessToken } },
+      );
+      const responseContent = response.data?.content;
+      const orders = [
+        responseContent?.ordersHistory,
+        responseContent?.content?.ordersHistory,
+        responseContent?.profile?.ordersHistory,
+        responseContent?.profile?.content?.ordersHistory,
+      ].find(Array.isArray);
+
+      if (!orders) {
+        throw new Error("Dữ liệu lịch sử đơn hàng trả về không đúng định dạng.");
+      }
+
+      return orders;
+    } catch (error) {
+      return rejectWithValue({
+        status: error.response?.status,
+        message: getErrorMessage(error),
+      });
+    }
+  },
+);
+
+export const updateProfile = createAsyncThunk(
+  "api/updateProfile",
+  async ({ profile, accessToken }, { rejectWithValue }) => {
+    if (!accessToken) {
+      return rejectWithValue("Vui lòng đăng nhập để cập nhật hồ sơ.");
+    }
+
+    try {
+      const response = await axios.post(
+        `${URL_API}/api/Users/updateProfile`,
+        profile,
+        { headers: { Authorization: accessToken } },
+      );
+      const responseProfile = response.data?.content;
+
+      return {
+        ...profile,
+        ...(responseProfile &&
+        typeof responseProfile === "object" &&
+        !Array.isArray(responseProfile)
+          ? responseProfile
+          : {}),
+      };
+    } catch (error) {
+      return rejectWithValue({
+        status: error.response?.status,
+        message: getErrorMessage(error),
+      });
+    }
+  },
+);
+
 const apiSlice = createSlice({
   name: "api",
   initialState: {
@@ -316,6 +414,14 @@ const apiSlice = createSlice({
     productDetailError: null,
     favoritesStatus: "idle",
     favoritesError: null,
+    profile: null,
+    profileStatus: "idle",
+    profileError: null,
+    profileUpdateStatus: "idle",
+    profileUpdateError: null,
+    orderHistory: [],
+    orderHistoryStatus: "idle",
+    orderHistoryError: null,
   },
   reducers: {
     setProductPage(state, action) {
@@ -374,6 +480,46 @@ const apiSlice = createSlice({
       .addCase(fetchFavoriteProducts.rejected, (state, action) => {
         state.favoritesStatus = "failed";
         state.favoritesError =
+          action.payload?.message || action.payload || action.error.message;
+      })
+      .addCase(fetchProfile.pending, (state) => {
+        state.profileStatus = "loading";
+        state.profileError = null;
+      })
+      .addCase(fetchProfile.fulfilled, (state, action) => {
+        state.profileStatus = "succeeded";
+        state.profile = action.payload;
+      })
+      .addCase(fetchProfile.rejected, (state, action) => {
+        state.profileStatus = "failed";
+        state.profileError =
+          action.payload?.message || action.payload || action.error.message;
+      })
+      .addCase(fetchOrderHistory.pending, (state) => {
+        state.orderHistoryStatus = "loading";
+        state.orderHistoryError = null;
+        state.orderHistory = [];
+      })
+      .addCase(fetchOrderHistory.fulfilled, (state, action) => {
+        state.orderHistoryStatus = "succeeded";
+        state.orderHistory = action.payload;
+      })
+      .addCase(fetchOrderHistory.rejected, (state, action) => {
+        state.orderHistoryStatus = "failed";
+        state.orderHistoryError =
+          action.payload?.message || action.payload || action.error.message;
+      })
+      .addCase(updateProfile.pending, (state) => {
+        state.profileUpdateStatus = "loading";
+        state.profileUpdateError = null;
+      })
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.profileUpdateStatus = "succeeded";
+        state.profile = action.payload;
+      })
+      .addCase(updateProfile.rejected, (state, action) => {
+        state.profileUpdateStatus = "failed";
+        state.profileUpdateError =
           action.payload?.message || action.payload || action.error.message;
       })
       .addCase(deleteProduct.fulfilled, (state, action) => {
