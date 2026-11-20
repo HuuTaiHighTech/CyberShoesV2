@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import Card from '../../component/ui/product/Card';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart, changeCartQuantity } from '../../redux/cartSlice';
 import { clearCredentials } from '../../redux/authSlice';
@@ -30,7 +30,6 @@ const DetailProduct = () => {
   const cartItem = cart.find((item) => String(item.id) === String(params.id))
   const [newProductQuantity, setNewProductQuantity] = useState(1)
   const [wishlistError, setWishlistError] = useState('')
-  const [loginRequired, setLoginRequired] = useState(false)
   const [relatedWishlistOverrides, setRelatedWishlistOverrides] = useState({})
   const relatedWishlist = { ...wishlist, ...relatedWishlistOverrides }
   const quantity = cartItem ? cartItem.quantity : newProductQuantity
@@ -104,6 +103,12 @@ const DetailProduct = () => {
       ? productDetailFromStore
       : fallbackProductDetail
 
+  const redirectToSignIn = () => {
+    window.localStorage.removeItem('userLogin')
+    dispatch(clearCredentials())
+    navigate('/sign-in', { replace: true })
+  }
+
   useEffect(() => {
     dispatch(fetchProductById(params.id))
   }, [dispatch, params.id])
@@ -164,7 +169,6 @@ const DetailProduct = () => {
     }
 
     setWishlistError('')
-    setLoginRequired(false)
     try {
       if (isLiked) {
         await dispatch(unlikeProduct({ productId, accessToken })).unwrap()
@@ -181,13 +185,10 @@ const DetailProduct = () => {
           [productId]: product,
         }))
       }
-      dispatch(fetchFavoriteProducts(accessToken))
+      await dispatch(fetchFavoriteProducts(accessToken)).unwrap()
     } catch (error) {
       if (error?.status === 401) {
-        window.localStorage.removeItem('userLogin')
-        dispatch(clearCredentials())
-        setWishlistError('Access token không hợp lệ hoặc đã hết hạn.')
-        setLoginRequired(true)
+        redirectToSignIn()
         return
       }
 
@@ -270,10 +271,7 @@ const DetailProduct = () => {
       </div>
       <h2>Related Products</h2>
       {wishlistError && (
-        <p role="alert">
-          {wishlistError}{' '}
-          {loginRequired && <Link to="/sign-in">Đăng nhập lại</Link>}
-        </p>
+        <p role="alert">{wishlistError}</p>
       )}
       <div className="related-products">
         <div className="row">

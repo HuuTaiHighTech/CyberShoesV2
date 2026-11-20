@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { clearCredentials } from '../../redux/authSlice'
 import { fetchFavoriteProducts, unlikeProduct } from '../../redux/apiSlice'
 import { removeFromWishlist } from '../../redux/wishlistSlice'
@@ -9,6 +9,7 @@ const WishList = () => {
   const wishlist = useSelector((state) => state.wishlist)
   const { accessToken } = useSelector((state) => state.auth)
   const dispatch = useDispatch()
+  const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
   const [removeErrorMessage, setRemoveErrorMessage] = useState('')
@@ -35,6 +36,7 @@ const WishList = () => {
             window.localStorage.removeItem('userLogin')
             dispatch(clearCredentials())
             setAuthMessage('Phiên đăng nhập không hợp lệ hoặc đã hết hạn.')
+            navigate('/sign-in', { replace: true })
             return
           }
 
@@ -54,7 +56,7 @@ const WishList = () => {
     return () => {
       isActive = false
     }
-  }, [accessToken, dispatch, reloadKey])
+  }, [accessToken, dispatch, navigate, reloadKey])
 
   const handleRemove = async (productId) => {
     setRemovingId(productId)
@@ -68,6 +70,7 @@ const WishList = () => {
         window.localStorage.removeItem('userLogin')
         dispatch(clearCredentials())
         setAuthMessage('Phiên đăng nhập không hợp lệ hoặc đã hết hạn.')
+        navigate('/sign-in', { replace: true })
         return
       }
 

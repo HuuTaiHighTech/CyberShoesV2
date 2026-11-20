@@ -222,7 +222,10 @@ export const placeOrder = createAsyncThunk(
       );
       return response.data?.message || "Đặt hàng thành công.";
     } catch (error) {
-      return rejectWithValue(getErrorMessage(error));
+      return rejectWithValue({
+        status: error.response?.status,
+        message: getErrorMessage(error),
+      });
     }
   },
 );

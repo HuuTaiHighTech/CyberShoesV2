@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { clearCredentials } from "../../redux/authSlice";
 import { addToCart } from "../../redux/cartSlice";
@@ -45,7 +45,12 @@ const ProductList = () => {
       ? ""
       : activeCategory?.alias || activeCategory?.name || selectedCategoryId;
   const [wishlistError, setWishlistError] = useState("");
-  const [loginRequired, setLoginRequired] = useState(false);
+
+  const redirectToSignIn = useCallback(() => {
+    window.localStorage.removeItem("userLogin");
+    dispatch(clearCredentials());
+    navigate("/sign-in", { replace: true });
+  }, [dispatch, navigate]);
 
   const addProCart = (proClick) => {
     dispatch(addToCart({ ...proClick, quantity: 1 }));
@@ -120,9 +125,15 @@ const ProductList = () => {
 
   useEffect(() => {
     if (accessToken && favoritesStatus === "idle") {
-      dispatch(fetchFavoriteProducts(accessToken));
+      dispatch(fetchFavoriteProducts(accessToken))
+        .unwrap()
+        .catch((error) => {
+          if (error?.status === 401) {
+            redirectToSignIn();
+          }
+        });
     }
-  }, [accessToken, dispatch, favoritesStatus])
+  }, [accessToken, dispatch, favoritesStatus, redirectToSignIn])
 
   useEffect(() => {
     if (Number.isInteger(queryPage) && queryPage > 0 && queryPage !== pageIndex) {
@@ -141,7 +152,6 @@ const ProductList = () => {
     }
 
     setWishlistError("");
-    setLoginRequired(false);
     try {
       if (iconStatus) {
         await dispatch(unlikeProduct({ productId, accessToken })).unwrap();
@@ -150,13 +160,10 @@ const ProductList = () => {
         await dispatch(likeProduct({ productId, accessToken })).unwrap();
         dispatch(addToWishlist(productClick));
       }
-      dispatch(fetchFavoriteProducts(accessToken));
+      await dispatch(fetchFavoriteProducts(accessToken)).unwrap();
     } catch (error) {
       if (error?.status === 401) {
-        window.localStorage.removeItem("userLogin");
-        dispatch(clearCredentials());
-        setWishlistError("Access token không hợp lệ hoặc đã hết hạn.");
-        setLoginRequired(true);
+        redirectToSignIn();
         return;
       }
 
@@ -289,10 +296,7 @@ const ProductList = () => {
           <p role="alert">Không thể tải sản phẩm: {pagingError}</p>
         )}
         {wishlistError && (
-          <p role="alert">
-            {wishlistError}{" "}
-            {loginRequired && <Link to="/sign-in">Đăng nhập lại</Link>}
-          </p>
+          <p role="alert">{wishlistError}</p>
         )}
         <div className="row">
           {renderProductList()}

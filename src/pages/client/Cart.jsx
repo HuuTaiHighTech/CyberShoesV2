@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { clearCredentials } from "../../redux/authSlice";
 import {
+  clearCart,
   changeCartQuantity,
   removeFromCart,
 } from "../../redux/cartSlice";
@@ -43,13 +45,19 @@ const Cart = () => {
     setOrderMessage("");
 
     try {
-      const message = await dispatch(
-        placeOrder({ orderData, accessToken }),
-      ).unwrap();
-      setOrderMessage(message);
+      await dispatch(placeOrder({ orderData, accessToken })).unwrap();
+      dispatch(clearCart());
+      navigate("/", { replace: true });
     } catch (error) {
       console.error("Gọi API đặt hàng thất bại:", error);
-      setOrderMessage(`Đặt hàng thất bại: ${error}`);
+      if (error?.status === 401) {
+        window.localStorage.removeItem("userLogin");
+        dispatch(clearCredentials());
+        navigate("/sign-in", { replace: true });
+        return;
+      }
+
+      setOrderMessage(`Đặt hàng thất bại: ${error?.message || error}`);
     } finally {
       setIsSubmitting(false);
     }
