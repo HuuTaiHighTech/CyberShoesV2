@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect } from 'react'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
 import { useDispatch, useSelector } from 'react-redux'
@@ -7,10 +7,8 @@ import { clearCredentials, setCredentials } from '../../redux/authSlice'
 import {
   fetchOrderHistory,
   fetchProfile,
-  uploadAvatar,
   updateProfile,
 } from '../../redux/apiSlice'
-import { URL_IMAGE } from '../../util/variable_global'
 import './Profile.css'
 
 const orderStatusLabels = {
@@ -31,19 +29,6 @@ const formatOrderDate = (value) => {
 
 const formatPrice = (value) =>
   new Intl.NumberFormat('vi-VN').format(value)
-
-const getAvatarUrl = (value) => {
-  if (typeof value !== 'string' || !value.trim()) {
-    return ''
-  }
-
-  const image = value.trim()
-  if (/^(https?:)?\/\//i.test(image) || /^data:/i.test(image)) {
-    return image
-  }
-
-  return `${URL_IMAGE}${image.replace(/^\/+/, '').replace(/^images\//i, '')}`
-}
 
 const profileSchema = Yup.object({
   email: Yup.string()
@@ -79,27 +64,6 @@ const Profile = () => {
   const orderHistoryError = useSelector(
     (state) => state.api.orderHistoryError,
   )
-  const avatarInputRef = useRef(null)
-  const previewUrlRef = useRef(null)
-  const [selectedAvatarUrl, setSelectedAvatarUrl] = useState('')
-  const [avatarError, setAvatarError] = useState('')
-  const [avatarSuccess, setAvatarSuccess] = useState('')
-  const [avatarUploading, setAvatarUploading] = useState(false)
-  const savedAvatarUrl = getAvatarUrl(
-    [profile?.avatar, profile?.image, user?.avatar, user?.image, user?.avatarUrl].find(
-      (value) => typeof value === 'string' && value.trim(),
-    ),
-  )
-
-  useEffect(
-    () => () => {
-      if (previewUrlRef.current) {
-        URL.revokeObjectURL(previewUrlRef.current)
-      }
-    },
-    [],
-  )
-
   useEffect(() => {
     if (!accessToken) {
       navigate('/sign-in', { replace: true })
@@ -208,116 +172,9 @@ const Profile = () => {
       </div>
     ) : null
 
-  const handleAvatarChange = async (event) => {
-    const input = event.currentTarget
-    const file = event.target.files?.[0]
-    if (!file) {
-      return
-    }
-
-    if (!file.type.startsWith('image/')) {
-      setAvatarError('Vui lòng chọn tệp hình ảnh.')
-      input.value = ''
-      return
-    }
-
-    if (previewUrlRef.current) {
-      URL.revokeObjectURL(previewUrlRef.current)
-    }
-    const previewUrl = URL.createObjectURL(file)
-    previewUrlRef.current = previewUrl
-    setSelectedAvatarUrl(previewUrl)
-    setAvatarError('')
-    setAvatarSuccess('')
-    setAvatarUploading(true)
-
-    let uploaded = false
-    try {
-      await dispatch(uploadAvatar({ file, accessToken })).unwrap()
-      uploaded = true
-      const updatedProfile = await dispatch(fetchProfile(user?.email)).unwrap()
-      const updatedAvatarUrl = getAvatarUrl(
-        updatedProfile.avatar ?? updatedProfile.image,
-      )
-      const updatedUser = {
-        ...user,
-        ...updatedProfile,
-        ...(updatedAvatarUrl ? { avatar: updatedAvatarUrl } : {}),
-        accessToken,
-      }
-      window.localStorage.setItem('userLogin', JSON.stringify(updatedUser))
-      dispatch(setCredentials(updatedUser))
-
-      if (previewUrlRef.current) {
-        URL.revokeObjectURL(previewUrlRef.current)
-        previewUrlRef.current = null
-      }
-      setSelectedAvatarUrl('')
-      setAvatarSuccess('Cập nhật ảnh đại diện thành công.')
-    } catch (error) {
-      if (error?.status === 401) {
-        window.localStorage.removeItem('userLogin')
-        dispatch(clearCredentials())
-        navigate('/sign-in', { replace: true })
-      }
-
-      if (!uploaded && previewUrlRef.current) {
-        URL.revokeObjectURL(previewUrlRef.current)
-        previewUrlRef.current = null
-        setSelectedAvatarUrl('')
-      }
-      setAvatarError(
-        uploaded
-          ? `Ảnh đã tải lên nhưng không thể tải lại hồ sơ: ${error?.message || String(error)}`
-          : error?.message || String(error),
-      )
-    } finally {
-      setAvatarUploading(false)
-      input.value = ''
-    }
-  }
-
   return (
     <div className="container">
       <h1 className="text-center"> ProFile</h1>
-      <div className="profile-avatar">
-        <input
-          ref={avatarInputRef}
-          id="avatarUpload"
-          className="profile-avatar-input"
-          type="file"
-          accept="image/*"
-          onChange={handleAvatarChange}
-          disabled={avatarUploading}
-        />
-        <button
-          type="button"
-          className="profile-avatar-picker"
-          onClick={() => avatarInputRef.current?.click()}
-          aria-label="Chọn ảnh đại diện"
-          disabled={avatarUploading}
-        >
-          {selectedAvatarUrl || savedAvatarUrl ? (
-            <img
-              src={selectedAvatarUrl || savedAvatarUrl}
-              alt="Ảnh đại diện"
-              className="profile-avatar-image"
-            />
-          ) : (
-            <i className="fa-regular fa-user profile-avatar-placeholder" aria-hidden="true" />
-          )}
-          <span className="profile-avatar-overlay">
-            <i className="fa-solid fa-camera" aria-hidden="true" />
-            <span>Chọn ảnh</span>
-          </span>
-        </button>
-        {avatarError && (
-          <p className="profile-avatar-error" role="alert">{avatarError}</p>
-        )}
-        {avatarUploading && <p role="status">Đang tải ảnh đại diện...</p>}
-        {avatarSuccess && <p className="text-success mb-0" role="status">{avatarSuccess}</p>}
-      </div>
-
       <div>
         {profileStatus === 'loading' && (
           <div role="status">Đang tải hồ sơ...</div>

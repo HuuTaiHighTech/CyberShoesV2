@@ -380,34 +380,6 @@ export const fetchOrderHistory = createAsyncThunk(
   },
 );
 
-export const uploadAvatar = createAsyncThunk(
-  "api/uploadAvatar",
-  async ({ file, accessToken }, { rejectWithValue }) => {
-    if (!accessToken) {
-      return rejectWithValue({
-        message: "Vui lòng đăng nhập để cập nhật ảnh đại diện.",
-      });
-    }
-
-    const formData = new FormData();
-    formData.append("avatar", file);
-
-    try {
-      const response = await axios.post(
-        `${URL_API}/api/Users/uploadavatar`,
-        formData,
-        { headers: { Authorization: accessToken } },
-      );
-      return response.data;
-    } catch (error) {
-      return rejectWithValue({
-        status: error.response?.status,
-        message: getErrorMessage(error),
-      });
-    }
-  },
-);
-
 export const updateProfile = createAsyncThunk(
   "api/updateProfile",
   async ({ profile, accessToken }, { rejectWithValue }) => {
