@@ -12,6 +12,124 @@ const getApiConfig = () =>
     ? { headers: { TokenCybersoft: TOKEN_CYBERSOFT } }
     : undefined;
 
+const REFRESH_TOKEN_URL = `${URL_API}/api/Users/RefeshToken`;
+let refreshTokenRequest;
+
+const getStoredUser = () => {
+  const storedUser = window.localStorage.getItem("userLogin");
+  if (!storedUser) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(storedUser);
+  } catch (error) {
+    console.error("Không thể đọc thông tin đăng nhập đã lưu:", error);
+    return null;
+  }
+};
+
+const clearSession = () => {
+  window.localStorage.removeItem("userLogin");
+  window.dispatchEvent(new Event("auth:logout"));
+};
+
+const refreshAccessToken = async () => {
+  const user = getStoredUser();
+  if (!user?.accessToken) {
+    throw new Error("Không tìm thấy access token để làm mới phiên đăng nhập.");
+  }
+
+  const apiConfig = getApiConfig() || {};
+  const response = await axios.get(REFRESH_TOKEN_URL, {
+    ...apiConfig,
+    headers: {
+      ...(apiConfig.headers || {}),
+      Authorization: user.accessToken,
+    },
+  });
+  const refreshedUser = response.data?.content;
+  const accessToken =
+    refreshedUser?.accessToken || response.data?.accessToken;
+
+  if (typeof accessToken !== "string" || !accessToken) {
+    throw new Error("API làm mới token không trả về access token hợp lệ.");
+  }
+
+  const updatedUser = {
+    ...user,
+    ...(refreshedUser && typeof refreshedUser === "object"
+      ? refreshedUser
+      : {}),
+    accessToken,
+  };
+  window.localStorage.setItem("userLogin", JSON.stringify(updatedUser));
+  window.dispatchEvent(
+    new CustomEvent("auth:token-refreshed", { detail: updatedUser }),
+  );
+  return accessToken;
+};
+
+const isAuthEndpoint = (url = "") =>
+  url.includes("/api/Users/signin") ||
+  url.includes("/api/Users/signup") ||
+  url.includes("/api/Users/RefeshToken");
+
+axios.interceptors.request.use((config) => {
+  if (config.headers?.Authorization) {
+    const user = getStoredUser();
+    if (user?.accessToken) {
+      config.headers.Authorization = user.accessToken;
+    }
+  }
+  return config;
+});
+
+axios.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error.config;
+    const status = error.response?.status;
+
+    const hasSession =
+      Boolean(getStoredUser()?.accessToken) ||
+      Boolean(config?.headers?.Authorization);
+    if (status === 401 && config && !isAuthEndpoint(config.url) && hasSession) {
+      clearSession();
+    }
+
+    if (
+      status !== 403 ||
+      !config ||
+      config._retriedAfterRefresh ||
+      isAuthEndpoint(config.url) ||
+      !getStoredUser()?.accessToken
+    ) {
+      return Promise.reject(error);
+    }
+
+    config._retriedAfterRefresh = true;
+
+    try {
+      if (!refreshTokenRequest) {
+        refreshTokenRequest = refreshAccessToken().finally(() => {
+          refreshTokenRequest = null;
+        });
+      }
+
+      const accessToken = await refreshTokenRequest;
+      config.headers = config.headers || {};
+      config.headers.Authorization = accessToken;
+      return await axios(config);
+    } catch (refreshError) {
+      if ([401, 403].includes(refreshError.response?.status)) {
+        clearSession();
+      }
+      return Promise.reject(refreshError);
+    }
+  },
+);
+
 const getErrorMessage = (error) => {
   const responseData = error.response?.data;
   if (typeof responseData?.message === "string") {

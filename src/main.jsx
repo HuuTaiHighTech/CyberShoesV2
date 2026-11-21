@@ -20,6 +20,18 @@ import ProductList from "./pages/client/ProductList";
 import Demo from "./pages/Demo";
 import { store } from "./redux/store";
 import Profile from "./pages/client/Profile";
+import { clearCredentials, setCredentials } from "./redux/authSlice";
+
+window.addEventListener("auth:token-refreshed", (event) => {
+  store.dispatch(setCredentials(event.detail));
+});
+
+window.addEventListener("auth:logout", () => {
+  store.dispatch(clearCredentials());
+  if (window.location.pathname !== "/sign-in") {
+    window.location.replace("/sign-in");
+  }
+});
 
 createRoot(document.getElementById("root")).render(
   <BrowserRouter>
