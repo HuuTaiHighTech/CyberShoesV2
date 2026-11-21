@@ -28,7 +28,31 @@ const DetailProduct = () => {
   const favoritesStatus = useSelector((state) => state.api.favoritesStatus)
   const cart = useSelector((state) => state.cart)
   const cartItem = cart.find((item) => String(item.id) === String(params.id))
-  const [newProductQuantity, setNewProductQuantity] = useState(1)
+  const [newProductQuantityState, setNewProductQuantityState] = useState({
+    productId: String(params.id),
+    quantity: 1,
+  })
+  const newProductQuantity =
+    newProductQuantityState.productId === String(params.id)
+      ? newProductQuantityState.quantity
+      : 1
+  const setNewProductQuantity = (updater) => {
+    setNewProductQuantityState((currentState) => {
+      const currentQuantity =
+        currentState.productId === String(params.id)
+          ? currentState.quantity
+          : 1
+      const nextQuantity =
+        typeof updater === 'function'
+          ? updater(currentQuantity)
+          : updater
+
+      return {
+        productId: String(params.id),
+        quantity: nextQuantity,
+      }
+    })
+  }
   const [wishlistError, setWishlistError] = useState('')
   const [relatedWishlistOverrides, setRelatedWishlistOverrides] = useState({})
   const relatedWishlist = { ...wishlist, ...relatedWishlistOverrides }
