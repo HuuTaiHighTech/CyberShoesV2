@@ -9,4 +9,7 @@
 - Video demo
 - Deploy
 - Công nghệ và thư viện dùng
+- Nhánh preview là kiểm tra công việc của mọi người có đạt hay không
+- Nhánh tên là công việc từng thành viên đảm nhận
+- Nhánh main là nhánh chính giảng viên hoặc mentor sẽ chấm bài
 
